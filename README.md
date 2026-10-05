@@ -91,7 +91,7 @@ En el repositorio de GitHub:
    - Nombre: `SABANA_SERVER_URL`
    - Valor: la URL HTTPS de Render, por ejemplo `https://sabana-multijugador.onrender.com`.
    - Es una URL pública, no un secreto. Usa solo el origen, sin rutas ni parámetros.
-   
+
    Si no creas esta variable, el workflow usa `https://sabana-multijugador.onrender.com` como valor predeterminado. Si tu servicio tiene otra URL, debes crear la variable para que la interfaz se conecte al servidor correcto.
 3. Ve a **Actions → Deploy GitHub Pages → Run workflow**, o realiza un push a `main`.
 
