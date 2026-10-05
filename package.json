@@ -1,0 +1,22 @@
+{
+  "name": "supervivencia-sabana",
+  "version": "0.2.0",
+  "description": "Juego web multijugador educativo sobre el ecosistema de la sabana",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test",
+    "build:pages": "node scripts/build-pages.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

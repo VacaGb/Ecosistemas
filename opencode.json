@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": ["C:/Users/hu250/.agents/skills"]
+  }
+}

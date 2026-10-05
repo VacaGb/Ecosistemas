@@ -1,0 +1,140 @@
+/* Interaction layer: short feedback, purposeful celebration, no layout animation. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --feedback-time: 160ms;
+  --entry-time: 240ms;
+  --lime: #d4e99a;
+  --muted: #687060;
+}
+
+h1, h2 { text-wrap: balance; }
+.question-copy p, .learning p { text-wrap: pretty; }
+.code, .stats, .points-pop, .ranking, .player-hud { font-variant-numeric: tabular-nums; }
+.badge { color: #687060; }
+.subtitle, .question-copy p { color: #687060; }
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+  padding: 12px 18px;
+  color: white;
+  background: var(--ink);
+  border-radius: 8px;
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: none; }
+main:focus, h1[tabindex]:focus { outline: none; }
+.form-error { color: #a03540; font-size: 13px; margin: 12px 0; }
+
+button {
+  transition: transform var(--feedback-time) var(--ease-out), opacity var(--feedback-time) var(--ease-out);
+}
+.primary { background: #283923; color: #fff; box-shadow: none; }
+.primary span { color: var(--lime); }
+.primary:hover:not(:disabled) { background: #283923; transform: none; box-shadow: none; }
+.primary:active:not(:disabled) { transform: scale(.97); }
+.option { box-shadow: none; transition: transform var(--feedback-time) var(--ease-out), opacity var(--feedback-time) var(--ease-out); }
+.option:hover:not(:disabled) { transform: none; box-shadow: none; filter: none; }
+.option.selected { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--tile); }
+.option:active:not(:disabled) { transform: scale(.98); }
+.animals span:not(.sr-only) { transition: transform var(--feedback-time) var(--ease-out); }
+.animals input:checked + span { animation: none; }
+.animals label:hover span:not(.sr-only) { transform: none; }
+.player:hover .avatar { animation: none; }
+.screen { animation: enter-screen var(--entry-time) var(--ease-out) both; }
+.player { animation: enter-item var(--entry-time) var(--ease-out) both; }
+.option { animation: enter-tile var(--entry-time) var(--ease-out) backwards; animation-delay: calc(var(--i) * 50ms); }
+.has-answer .option:not(.selected) { opacity: .35; filter: none; }
+.option.selected .option-key, .saved-check { animation: none; }
+.situation-icon { animation: enter-item var(--entry-time) var(--ease-out) both; }
+.result-icon { animation: enter-item var(--entry-time) var(--ease-out) both; }
+.deltas span { animation: enter-item var(--entry-time) var(--ease-out) both; animation-delay: 100ms; }
+.ranking li { animation: enter-item var(--entry-time) var(--ease-out) both; animation-delay: calc(var(--i) * 50ms); }
+.points-pop { animation: score-reveal 400ms var(--ease-out) both; }
+.podium-place { animation: podium-reveal 500ms var(--ease-out) both; animation-delay: calc(var(--i) * 80ms); }
+/* Scores and podium are infrequent celebrations: a longer reveal is deliberate. */
+.mascot { animation: mascot-welcome 3s var(--ease-out) 2; }
+.spark { animation: sparkle 3s linear 2; }
+.crown { animation: none; }
+.radar { animation: waiting-sway 3s ease-in-out infinite; }
+.timer.urgent { animation: none; }
+.dots i { animation: waiting-dot 1200ms ease-in-out infinite; }
+.dots i:nth-child(2) { animation-delay: 150ms; }
+.dots i:nth-child(3) { animation-delay: 300ms; }
+.confetti i { animation-name: celebration-fall; animation-timing-function: linear; }
+progress::-webkit-progress-value { transition: none; }
+body::before, body::after { animation: none; }
+
+/* The same notice can update rapidly; a transition can retarget without jumping. */
+#notice {
+  animation: none;
+  box-shadow: none;
+  opacity: 1;
+  transition: opacity var(--feedback-time) var(--ease-out);
+}
+@starting-style { #notice { opacity: 0; } }
+
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover:not(:disabled) { background: #374d30; transform: translateY(-1px); }
+  .option:hover:not(:disabled) { transform: translateY(-2px); }
+  .animals label:hover span:not(.sr-only) { transform: translateY(-2px); }
+}
+
+@keyframes enter-screen {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes enter-item {
+  from { opacity: 0; transform: translateY(6px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes enter-tile {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes score-reveal {
+  from { opacity: 0; transform: scale(.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes podium-reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes mascot-welcome {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes sparkle {
+  0%, 100% { opacity: .45; transform: scale(.97); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+@keyframes waiting-sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+@keyframes waiting-dot {
+  0%, 60%, 100% { opacity: .4; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+@keyframes celebration-fall {
+  0% { opacity: 0; transform: translateY(-20px) rotate(var(--r)); }
+  10%, 85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(40px, 105vh) rotate(540deg); }
+}
+@keyframes gentle-fade { from { opacity: .4; } to { opacity: 1; } }
+
+/* A shortcut confirms instantly; it must never wait for animation. */
+html[data-input="keyboard"] .has-answer *,
+html[data-input="keyboard"] button:focus {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .screen, .player, .ranking li { animation: gentle-fade 160ms linear both !important; }
+  button, .animals span, .option, #notice { transition: opacity 160ms linear !important; }
+  button:hover, button:active, .animals label:hover span:not(.sr-only) { transform: none !important; }
+  .confetti { display: none; }
+}

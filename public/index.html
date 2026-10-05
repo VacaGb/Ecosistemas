@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f0">
+  <meta name="description" content="Una aventura multijugador en la sabana. Entra con tu código, elige cómo sobrevivir y aprende con tu manada.">
+  <title>Sabana · Una aventura de supervivencia</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./motion.css">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <script src="./config.js" defer></script>
+  <script src="./socket.io/socket.io.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Saltar al juego</a>
+  <header class="topbar"><a class="brand" href="./"><span class="brand-mark">↗</span> sabana<span aria-hidden="true">.</span></a><span id="connection" class="badge" role="status">Conectando…</span></header>
+  <main id="app" tabindex="-1"></main>
+  <p id="notice" role="alert" hidden></p>
+  <footer>Aprende. Decide. Sobrevive.</footer>
+</body>
+</html>
