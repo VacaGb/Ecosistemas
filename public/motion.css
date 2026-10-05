@@ -26,6 +26,7 @@ h1, h2 { text-wrap: balance; }
 .skip-link:focus { transform: none; }
 main:focus, h1[tabindex]:focus { outline: none; }
 .form-error { color: #a03540; font-size: 13px; margin: 12px 0; }
+.scoring-note { text-align: center; color: var(--muted); font-size: 12px; line-height: 1.6; margin: 14px 0; font-variant-numeric: tabular-nums; }
 
 button {
   transition: transform var(--feedback-time) var(--ease-out), opacity var(--feedback-time) var(--ease-out);

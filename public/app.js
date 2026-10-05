@@ -56,9 +56,10 @@ function question(me) {
 function results(me) {
   const final = state.phase === 'finished';
   const result = me?.result;
-  const good = result?.points >= 300;
+  const good = result?.basePoints >= 300;
   const best = state.situation.outcomes.reduce((a, b) => a.points > b.points ? a : b);
   return `<section class="results screen">${final || good ? confetti() : ''}<p class="eyebrow">${final ? 'EXPEDICIÓN COMPLETADA' : `RETO ${state.round} COMPLETADO`}</p>${final ? `<h1>¡Esta es la manada!</h1>${podium()}` : `<div class="result-icon" aria-hidden="true">${good ? '🙌' : me ? '🌱' : '✨'}</div><h1>${good ? '¡Buen instinto!' : me ? 'Cada decisión enseña' : '¡Así va la aventura!'}</h1>${result ? `<div class="points-pop">+${result.points}<span> puntos</span></div><div class="deltas">${[['water', '💧', 'Agua'], ['energy', '⚡', 'Energía'], ['survival', '💚', 'Supervivencia']].map(([key, icon, label]) => `<span class="${result[key] >= 0 ? 'positive' : 'negative'}" aria-label="${label}: ${result[key]}">${icon} ${result[key] > 0 ? '+' : ''}${result[key]}</span>`).join('')}</div>${result.choice === null ? '<p class="muted">Se acabó el tiempo para responder.</p>' : ''}` : ''}`}
+    ${result ? `<p class="scoring-note">${result.choice === null ? 'Sin respuesta: 0 puntos en este reto.' : `Descuento por tiempo: −${result.timePenalty} pts · ${Math.floor(result.elapsedMs / 1000)} s para responder.${final ? ` Este reto: +${result.points} pts.` : ''}`}</p>` : ''}
     <div class="learning"><span>🌿</span><div><b>${escape(best.text)}</b><p>${escape(state.situation.lesson)}</p></div></div>
     ${role === 'host' && !final ? '<button class="primary" id="next">Siguiente reto <span>→</span></button>' : final ? '<button class="primary" id="reset">Volver a jugar <span>↗</span></button>' : '<p class="waiting"><span class="dots"><i></i><i></i><i></i></span>Preparando el siguiente reto</p>'}
     ${ranking()}</section>`;
@@ -71,6 +72,7 @@ function render() {
   if (screenKey !== key) {
     screenKey = key;
     app.innerHTML = `<p id="host-status" class="banner" hidden>El presentador está reconectando…</p>${me && state.phase !== 'lobby' ? `<div class="player-hud"><span>${animal(me.animal)} ${escape(me.name)}</span><b>${me.score} pts</b></div>${stats(me)}` : ''}${state.phase === 'lobby' ? lobby() : state.phase === 'question' ? question(me) : results(me)}`;
+    if (state.phase === 'question') app.querySelector('.question').insertAdjacentHTML('beforeend', '<p id="time-cost" class="scoring-note"></p>');
     const heading = app.querySelector('h1');
     heading.tabIndex = -1;
     heading.focus({ preventScroll: true });
@@ -128,7 +130,15 @@ function updateClock() {
     if (seconds <= 5 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) label.animate?.([{ transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 250 });
   }
   timer.classList.toggle('urgent', seconds <= 10);
-  document.querySelector('#time-fill').style.transform = `scaleX(${Math.min(1, remaining / 30000)})`;
+  const duration = state.roundMs;
+  document.querySelector('#time-fill').style.transform = `scaleX(${Math.min(1, remaining / duration)})`;
+  const me = state.players.find(p => p.id === state.selfId);
+  const timeCost = document.querySelector('#time-cost');
+  const elapsed = state.answeredElapsedMs ?? Math.max(0, duration - remaining);
+  timeCost.textContent = me?.answered
+    ? `Tiempo registrado: ${Math.floor(elapsed / 1000)} s. El descuento se detuvo.`
+    : !seconds ? 'Tiempo terminado. Sin respuesta: 0 puntos.'
+    : `−${state.pointsPerSecond} pts por segundo completo · Sin respuesta: 0 pts${me?.alive ? ` · ${Math.floor(elapsed / 1000)} s transcurridos` : ''}`;
   if (!seconds) document.querySelectorAll('[data-choice]').forEach(button => button.disabled = true);
 }
 setInterval(updateClock, 100);

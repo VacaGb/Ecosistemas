@@ -78,10 +78,11 @@ test('complete multiplayer expedition, authorization, private choices, and recon
   assert.equal(a.state.players.length, 2);
   await emit(b, 'answer', { round: 1, choice: 0 });
   await waitFor(() => host.state?.phase === 'results');
-  assert.equal(host.state.players[0].score, 350);
+  assert.equal(host.state.players[0].score, 350 - host.state.players[0].result.timePenalty);
   assert.equal(host.state.players[0].water, 65);
   assert.equal((await emit(b, 'next_round')).ok, false);
   const choices = [0, 1, 2, 1, 2, 0, 0, 2, 1, 0, 2, 1];
+  const deductions = new Map(host.state.players.map(p => [p.id, p.result.timePenalty]));
   for (let round = 2; round <= 12; round++) {
     assert.equal((await emit(host, 'next_round')).ok, true);
     assert.equal((await emit(a, 'answer', { round, choice: choices[round - 1] })).ok, true);
@@ -89,9 +90,10 @@ test('complete multiplayer expedition, authorization, private choices, and recon
     await waitFor(() => host.state.round === round && host.state.phase !== 'question');
     assert.equal(host.state.phase, round === 12 ? 'finished' : 'results');
     assert.ok(host.state.players.every(p => p.alive && p.water > 0 && p.energy > 0));
+    for (const p of host.state.players) deductions.set(p.id, deductions.get(p.id) + p.result.timePenalty);
   }
   assert.equal(host.state.phase, 'finished');
-  assert.equal(host.state.players[0].score, 4200);
+  for (const p of host.state.players) assert.equal(p.score, 4200 - deductions.get(p.id));
   assert.equal(host.state.players[0].survived, 12);
   assert.equal(host.state.players[0].survival, 100);
   assert.equal((await emit(host, 'next_round')).ok, false);
@@ -109,7 +111,8 @@ test('server deadline penalizes unanswered disconnected players and rejects late
   assert.equal(host.state.players[0].water, 55);
   assert.equal(host.state.players[0].energy, 55);
   assert.equal(host.state.players[0].survival, 60);
-  assert.equal(host.state.players[0].score, 50);
+  assert.equal(host.state.players[0].score, 0);
+  assert.equal(host.state.players[0].result.points, 0);
   const resumed = await connect();
   assert.equal((await emit(resumed, 'resume', playerSession)).ok, true);
   assert.equal((await emit(resumed, 'answer', { round: 1, choice: 0 })).ok, false);
@@ -135,4 +138,55 @@ test('resource exhaustion ends expedition without negative resources; rooms rema
   assert.equal(host.state.players[0].alive, false);
   assert.equal(otherHost.state.phase, 'lobby');
   assert.equal(otherHost.state.players.length, 0);
+});
+
+test('slower answers earn fewer points; server timing survives reconnection and ignores client timing', async t => {
+  const { connect } = await setup(t);
+  const host = await connect();
+  let fast = await connect();
+  const slow = await connect();
+  const { session } = await emit(host, 'create_room');
+  const { session: fastSession } = await emit(fast, 'join_room', { code: session.code, name: 'Rápido', animal: 'lion' });
+  await emit(slow, 'join_room', { code: session.code, name: 'Pausado', animal: 'zebra' });
+  await emit(host, 'start_game');
+  await emit(fast, 'answer', { round: 1, choice: 0 });
+  await waitFor(() => fast.state?.answeredElapsedMs !== null);
+  const frozenTime = fast.state.answeredElapsedMs;
+  fast.disconnect();
+  await new Promise(resolve => setTimeout(resolve, 1100));
+  fast = await connect();
+  await emit(fast, 'resume', fastSession);
+  assert.equal(fast.state.answeredElapsedMs, frozenTime);
+  assert.equal((await emit(fast, 'answer', { round: 1, choice: 0, elapsedMs: 0 })).ok, false);
+  await emit(slow, 'answer', { round: 1, choice: 0, elapsedMs: 0, answeredElapsedMs: 0, timePenalty: 0, points: 99999 });
+  await waitFor(() => host.state.phase === 'results');
+  const fastResult = host.state.players.find(p => p.name === 'Rápido');
+  const slowResult = host.state.players.find(p => p.name === 'Pausado');
+  assert.equal(fastResult.result.elapsedMs, frozenTime);
+  assert.ok(slowResult.result.elapsedMs >= frozenTime + 1000);
+  assert.ok(slowResult.result.timePenalty >= 10);
+  assert.ok(slowResult.score < fastResult.score);
+  assert.equal(slowResult.score, 350 - slowResult.result.timePenalty);
+  await emit(host, 'next_round');
+  await waitFor(() => fast.state.round === 2);
+  assert.equal(fast.state.answeredElapsedMs, null);
+});
+
+test('an unanswered round adds zero while preserving previously earned points', async t => {
+  const { connect } = await setup(t, { roundMs: 300 });
+  const host = await connect();
+  const player = await connect();
+  const { session } = await emit(host, 'create_room');
+  await emit(player, 'join_room', { code: session.code, name: 'Ana', animal: 'lion' });
+  await emit(host, 'start_game');
+  await emit(player, 'answer', { round: 1, choice: 0 });
+  await waitFor(() => host.state.phase === 'results');
+  const previous = host.state.players[0].score;
+  assert.equal(previous, 350);
+  await emit(host, 'next_round');
+  await waitFor(() => host.state.round === 2 && host.state.phase === 'results');
+  assert.equal(host.state.players[0].score, previous);
+  assert.equal(host.state.players[0].result.points, 0);
+  assert.equal(host.state.players[0].result.choice, null);
+  assert.equal(host.state.players[0].alive, true);
 });

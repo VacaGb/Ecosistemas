@@ -45,8 +45,10 @@ Las respuestas utilizan tarjetas grandes de colores con símbolos distintos; en 
 
 - Agua, energía y supervivencia empiezan en **70** y están limitadas a **0–100**.
 - Cada opción tiene efectos y puntos base definidos en `server/situations.js`.
-- Se añaden **50 puntos por sobrevivir a cada ronda**. No hay bonificación por velocidad.
-- No responder cuesta 15 de agua, 15 de energía y 10 de supervivencia, sin puntos base.
+- Si respondes, se suman los puntos base de tu opción y **50 puntos si sobrevives**, y se descuentan **10 puntos por cada segundo completo** hasta que el servidor recibe tu respuesta. El resultado nunca baja de 0 y no resta puntos acumulados en rondas anteriores.
+- Ejemplo de una decisión de 300 puntos sobreviviendo: antes de 1 segundo ganas 350; a los 5 segundos, 300; a los 20 segundos, 150.
+- **No responder da exactamente 0 puntos en la ronda**, sin bonificación de supervivencia. Además cuesta 15 de agua, 15 de energía y 10 de supervivencia.
+- El descuento se congela al registrar la respuesta. Reconectarse conserva ese tiempo; el navegador no decide la puntuación. La interfaz indica la regla durante la pregunta y el descuento aplicado en los resultados.
 - Si cualquier recurso llega a 0, el participante se convierte en espectador y conserva su puntuación.
 - Orden de clasificación: puntos, rondas sobrevividas, supervivencia restante y nombre.
 - Los animales son avatares de una expedición humana. Los recursos son una simplificación educativa; las explicaciones se muestran después de responder.

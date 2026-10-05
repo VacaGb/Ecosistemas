@@ -4,6 +4,7 @@ const { randomBytes, randomInt } = require('node:crypto');
 const path = require('node:path');
 const { Server } = require('socket.io');
 const situations = require('./situations');
+const { POINTS_PER_SECOND, calculatePoints } = require('./scoring');
 
 const animals = { lion: '🦁', elephant: '🐘', giraffe: '🦒', zebra: '🦓', rhino: '🦏', leopard: '🐆' };
 const token = () => randomBytes(24).toString('hex');
@@ -32,6 +33,8 @@ function createGameServer({ roundMs = 30000, roomTtlMs = 6 * 60 * 60 * 1000, all
     })).sort((a, b) => b.score - a.score || b.survived - a.survived || b.survival - a.survival || a.name.localeCompare(b.name));
     return { code: room.code, phase: room.phase, hostConnected: !!room.hostSocket,
       round: room.round + 1, total: situations.length, deadline: room.deadline, serverNow: Date.now(),
+      roundMs, pointsPerSecond: POINTS_PER_SECOND,
+      answeredElapsedMs: identity.playerId ? room.players.get(identity.playerId)?.answeredElapsedMs ?? null : null,
       players, selfId: identity.playerId || null,
       selected: identity.playerId ? room.players.get(identity.playerId)?.answer : null,
       situation: current ? { title: current.title, icon: current.icon, story: current.story,
@@ -54,9 +57,9 @@ function createGameServer({ roundMs = 30000, roomTtlMs = 6 * 60 * 60 * 1000, all
       for (const key of ['water', 'energy', 'survival']) p[key] = clamp(p[key] + effect[key]);
       p.alive = p.water > 0 && p.energy > 0 && p.survival > 0;
       if (p.alive) p.survived++;
-      const points = effect.points + (p.alive ? 50 : 0);
+      const { points, timePenalty } = calculatePoints(effect.points, p.alive, p.answeredElapsedMs);
       p.score += points;
-      p.result = { choice: p.answer, points, water: p.water - previous.water, energy: p.energy - previous.energy, survival: p.survival - previous.survival };
+      p.result = { choice: p.answer, points, basePoints: effect.points, timePenalty, elapsedMs: p.answeredElapsedMs, water: p.water - previous.water, energy: p.energy - previous.energy, survival: p.survival - previous.survival };
     }
     room.deadline = null;
     room.phase = room.round === situations.length - 1 || ![...room.players.values()].some(p => p.alive) ? 'finished' : 'results';
@@ -66,7 +69,7 @@ function createGameServer({ roundMs = 30000, roomTtlMs = 6 * 60 * 60 * 1000, all
     room.round++;
     room.phase = 'question';
     room.deadline = Date.now() + roundMs;
-    for (const p of room.players.values()) { p.answer = null; p.result = null; }
+    for (const p of room.players.values()) { p.answer = null; p.answeredElapsedMs = null; p.result = null; }
     room.timer = setTimeout(() => finishRound(room), roundMs);
     publish(room);
   }
@@ -124,7 +127,7 @@ function createGameServer({ roundMs = 30000, roomTtlMs = 6 * 60 * 60 * 1000, all
       if (!Object.hasOwn(animals, data.animal)) fail('Selecciona un animal válido.');
       if (room.players.size >= 100) fail('La sala está llena (100 jugadores).');
       if ([...room.players.values()].some(p => p.name.toLocaleLowerCase() === name.toLocaleLowerCase())) fail('Ese nombre ya está en uso.');
-      const player = { id: token(), token: token(), name, animal: data.animal, water: 70, energy: 70, survival: 70, score: 0, alive: true, survived: 0, answer: null, result: null };
+      const player = { id: token(), token: token(), name, animal: data.animal, water: 70, energy: 70, survival: 70, score: 0, alive: true, survived: 0, answer: null, answeredElapsedMs: null, result: null };
       room.players.set(player.id, player);
       bind(room, 'player', player);
       return { session: { code: room.code, role: 'player', token: player.token } };
@@ -155,11 +158,13 @@ function createGameServer({ roundMs = 30000, roomTtlMs = 6 * 60 * 60 * 1000, all
       const room = getRoom();
       const p = room.players.get(socket.data.identity.playerId);
       if (!p || !p.alive) fail('No puedes responder en esta ronda.');
-      if (room.phase !== 'question' || Date.now() >= room.deadline) fail('El tiempo ha terminado.');
+      const receivedAt = Date.now();
+      if (room.phase !== 'question' || receivedAt >= room.deadline) fail('El tiempo ha terminado.');
       if (data.round !== room.round + 1) fail('Esta respuesta pertenece a otra ronda.');
       if (p.answer !== null) fail('Tu respuesta ya fue registrada.');
       if (!Number.isInteger(data.choice) || !situations[room.round].options[data.choice]) fail('Respuesta inválida.');
       p.answer = data.choice;
+      p.answeredElapsedMs = Math.max(0, receivedAt - (room.deadline - roundMs));
       publish(room);
       if ([...room.players.values()].filter(p => p.alive).every(p => p.answer !== null)) finishRound(room);
     });
