@@ -87,13 +87,15 @@ El plan gratuito puede suspenderse por inactividad y tardar en despertar; la int
 En el repositorio de GitHub:
 
 1. **Settings → Pages → Build and deployment → Source:** selecciona **GitHub Actions**.
-2. **Settings → Secrets and variables → Actions → Variables → New repository variable:**
+2. **Settings → Secrets and variables → Actions → Variables → New repository variable (recomendado):**
    - Nombre: `SABANA_SERVER_URL`
    - Valor: la URL HTTPS de Render, por ejemplo `https://sabana-multijugador.onrender.com`.
    - Es una URL pública, no un secreto. Usa solo el origen, sin rutas ni parámetros.
+   
+   Si no creas esta variable, el workflow usa `https://sabana-multijugador.onrender.com` como valor predeterminado. Si tu servicio tiene otra URL, debes crear la variable para que la interfaz se conecte al servidor correcto.
 3. Ve a **Actions → Deploy GitHub Pages → Run workflow**, o realiza un push a `main`.
 
-El workflow instala dependencias, ejecuta las pruebas, genera `dist/` con el cliente Socket.IO incluido y publica el sitio. Si falta la URL del servidor, detiene la compilación con un mensaje explicativo.
+El workflow instala dependencias, ejecuta las pruebas, genera `dist/` con el cliente Socket.IO incluido y publica el sitio. La primera ejecución puede requerir habilitar **Settings → Pages → Source: GitHub Actions** y conceder permisos de Pages si GitHub lo solicita.
 
 ### 4. Enlaces del juego publicado
 

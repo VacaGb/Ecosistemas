@@ -23,9 +23,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - uses: actions/configure-pages@v5
       - run: npm run build:pages
         env:
-          SABANA_SERVER_URL: ${{ vars.SABANA_SERVER_URL }}
+          SABANA_SERVER_URL: ${{ vars.SABANA_SERVER_URL || 'https://sabana-multijugador.onrender.com' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
