@@ -51,6 +51,7 @@ test('complete multiplayer expedition, authorization, private choices, and recon
   assert.equal((await emit(host, 'start_game')).ok, true);
   await waitFor(() => a.state?.phase === 'question');
   assert.equal(a.state.players[0].water, 70);
+  assert.equal(a.state.total, 12);
   assert.equal(a.state.situation.outcomes, null);
   assert.equal(JSON.stringify(a.state).includes(aSession.token), false);
   const stranger = await connect();
@@ -80,16 +81,18 @@ test('complete multiplayer expedition, authorization, private choices, and recon
   assert.equal(host.state.players[0].score, 350);
   assert.equal(host.state.players[0].water, 65);
   assert.equal((await emit(b, 'next_round')).ok, false);
-  const choices = [0, 1, 2, 1, 2, 0];
-  for (let round = 2; round <= 6; round++) {
+  const choices = [0, 1, 2, 1, 2, 0, 0, 2, 1, 0, 2, 1];
+  for (let round = 2; round <= 12; round++) {
     assert.equal((await emit(host, 'next_round')).ok, true);
     assert.equal((await emit(a, 'answer', { round, choice: choices[round - 1] })).ok, true);
     assert.equal((await emit(b, 'answer', { round, choice: choices[round - 1] })).ok, true);
     await waitFor(() => host.state.round === round && host.state.phase !== 'question');
+    assert.equal(host.state.phase, round === 12 ? 'finished' : 'results');
+    assert.ok(host.state.players.every(p => p.alive && p.water > 0 && p.energy > 0));
   }
   assert.equal(host.state.phase, 'finished');
-  assert.equal(host.state.players[0].score, 2100);
-  assert.equal(host.state.players[0].survived, 6);
+  assert.equal(host.state.players[0].score, 4200);
+  assert.equal(host.state.players[0].survived, 12);
   assert.equal(host.state.players[0].survival, 100);
   assert.equal((await emit(host, 'next_round')).ok, false);
 });

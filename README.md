@@ -1,6 +1,6 @@
 # 🌿 Sabana · Aventura de supervivencia
 
-Juego educativo multijugador en español, con Express y Socket.IO. Incluye presentador, salas con código único, seis situaciones, decisiones individuales, recursos, puntuación y clasificación final. Interfaz adaptable a computadoras y celulares.
+Juego educativo multijugador en español, con Express y Socket.IO. Incluye presentador, salas con código único, doce situaciones, decisiones individuales, recursos, puntuación y clasificación final. Interfaz adaptable a computadoras y celulares.
 
 ## Ejecutar en Windows, macOS o Linux
 
@@ -39,7 +39,7 @@ Las respuestas utilizan tarjetas grandes de colores con símbolos distintos; en 
 3. La lista de participantes y su conexión se actualizan en tiempo real. El presentador inicia con al menos un jugador conectado.
 4. Cada situación dura hasta 30 segundos. Solo se admite una respuesta por jugador. Cuando todos los jugadores activos responden, la ronda termina anticipadamente.
 5. Se muestran consecuencias, explicación educativa y clasificación. El presentador avanza a la siguiente situación.
-6. Tras seis situaciones, o cuando nadie conserva recursos, aparece la clasificación final.
+6. Tras doce situaciones, o cuando nadie conserva recursos, aparece la clasificación final.
 
 ### Reglas
 
